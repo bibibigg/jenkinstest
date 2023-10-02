@@ -32,8 +32,6 @@ repositories {
     mavenCentral()
 }
 
-
-
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -56,6 +54,8 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:2.3.1'
+
+    implementation 'org.apache.clerezza.ext:org.json.simple:0.4'
 }
 
 tasks.named('test') {
