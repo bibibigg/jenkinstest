@@ -1,7 +1,9 @@
 package bitcamp.show_pet.member.controller;
 
 import bitcamp.show_pet.NcpObjectStorageService;
-import bitcamp.show_pet.config.KakaoConfig;
+import bitcamp.show_pet.chatting.model.dao.ChattingDAO;
+import bitcamp.show_pet.chatting.model.vo.ChatRoomVO;
+import bitcamp.show_pet.chatting.service.ChattingService;
 import bitcamp.show_pet.config.NcpConfig;
 import bitcamp.show_pet.mail.EmailService;
 import bitcamp.show_pet.member.model.vo.Member;
@@ -15,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Controller
@@ -50,6 +50,12 @@ public class MemberController {
 
   @Autowired
   MemberService memberService;
+
+  @Autowired
+  ChattingService chattingService;
+
+  @Autowired
+  ChattingDAO chattingDAO;
 
   @Autowired
   NcpObjectStorageService ncpObjectStorageService;
@@ -154,6 +160,8 @@ public class MemberController {
 
     List<Member> followersList;
     List<Member> followingsList;
+    List<ChatRoomVO> chatRooms = chattingService.getChatRoomsForMember(memberId);
+    model.addAttribute("chatRooms", chatRooms);
 
     if (loginUser.getId() == memberId) {
       followersList = memberService.getFollowers(loginUser.getId());

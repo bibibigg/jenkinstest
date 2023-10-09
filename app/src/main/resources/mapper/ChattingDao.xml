@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="bitcamp.show_pet.chatting.model.dao.ChattingDAO">
+  <resultMap type="bitcamp.show_pet.chatting.model.vo.ChatRoomVO" id="ChatRoomMap">
+    <id     column="room_id"        property="roomId"/>
+    <result column="post_id"        property="postId"/>
+    <result column="seller_id"      property="sellerId"/>
+    <result column="buyer_id"       property="buyerId"/>
+    <result column="last_message"   property="lastMessage"/>
+    <result column="last_updated"   property="lastUpdated"/>
+    <result column="seller_nickname" property="sellerNickname"/>
+    <result column="buyer_nickname" property="buyerNickname"/>
+  </resultMap>
+
+  <resultMap type="bitcamp.show_pet.chatting.model.vo.ChatMessageVO" id="ChatMessageMap">
+    <id     column="message_id" property="messageId"/>
+    <result column="room_id"    property="roomId"/>
+    <result column="sender_id"  property="senderId"/>
+    <result column="content"    property="content"/>
+    <result column="sent_at"    property="sentAt"/>
+    <result column="is_read"    property="isRead"/>
+    <result column="detected_language"    property="targetLang"/>
+  </resultMap>
+
+  <resultMap id="ChatRoomDetailMap" type="bitcamp.show_pet.chatting.model.vo.ChatRoomVO">
+    <result column="roomId" property="roomId"/>
+    <result column="postId" property="postId"/>
+    <result column="sellerId" property="sellerId"/>
+    <result column="buyerId" property="buyerId"/>
+    <result column="lastMessage" property="lastMessage"/>
+    <result column="lastUpdated" property="lastUpdated"/>
+    <result column="sellerNickname" property="sellerNickname"/>
+    <result column="buyerNickname" property="buyerNickname"/>
+    <result column="postTitle" property="postTitle"/>
+  </resultMap>
+
+  <resultMap id="ChatRoomWithAttachmentMap" type="bitcamp.show_pet.chatting.model.vo.ChatRoomVO">
+    <!-- ... 기존 resultMap 내용 ... -->
+    <result column="postAttachment" property="postAttachment"/> <!-- 첨부파일 경로 -->
+  </resultMap>
+
+  <!-- Queries -->
+  <select id="getChatRoomByPostIdAndUserId" resultMap="ChatRoomMap">
+    SELECT
+    cr.*,
+    m1.nickname AS seller_nickname,
+    m2.nickname AS buyer_nickname
+    FROM
+    chat_room cr
+    JOIN
+    member m1 ON cr.seller_id = m1.member_id
+    JOIN
+    member m2 ON cr.buyer_id = m2.member_id
+    WHERE
+    post_id = #{postId} AND (seller_id = #{currentUserId} OR buyer_id = #{currentUserId})
+    LIMIT 1
+  </select>
+
+  <select id="getMessagesByRoomId" resultMap="ChatMessageMap">
+    SELECT * FROM chat_message WHERE room_id = #{roomId} ORDER BY sent_at ASC
+  </select>
+
+  <insert id="saveMessage">
+    INSERT INTO chat_message (room_id, sender_id, content, sent_at, is_read, detected_language)
+    VALUES (#{roomId}, #{senderId}, #{content}, now(), #{isRead}, #{detectedLanguage})
+  </insert>
+
+  <insert id="saveTranslatedMessage">
+    INSERT INTO translated_message (message_id, translated_content, target_language)
+    VALUES (#{messageId}, #{translatedContent}, #{targetLanguage})
+  </insert>
+
+  <select id="getChatRoomsForSeller" resultMap="ChatRoomDetailMap">
+    SELECT
+    cr.room_id AS roomId,
+    cr.post_id AS postId,
+    cr.seller_id AS sellerId,
+    cr.buyer_id AS buyerId,
+    cr.last_message AS lastMessage,
+    cr.last_updated AS lastUpdated,
+    m1.nickname AS sellerNickname,
+    m2.nickname AS buyerNickname,
+    p.title AS postTitle
+    FROM
+    chat_room cr
+    JOIN
+    post p ON cr.post_id = p.post_id
+    JOIN
+    member m1 ON cr.seller_id = m1.member_id
+    JOIN
+    member m2 ON cr.buyer_id = m2.member_id
+    WHERE
+    cr.seller_id = #{sellerId}
+  </select>
+
+  <select id="getChatRoomsForMember" resultMap="ChatRoomWithAttachmentMap">
+    SELECT
+    cr.room_id AS roomId,
+    cr.post_id AS postId,
+    cr.seller_id AS sellerId,
+    cr.buyer_id AS buyerId,
+    cr.last_message AS lastMessage,
+    cr.last_updated AS lastUpdated,
+    m1.nickname AS sellerNickname,
+    m2.nickname AS buyerNickname,
+    p.title AS postTitle,
+    f.filepath AS postAttachment  -- 첨부파일 경로
+    FROM
+    chat_room cr
+    JOIN
+    post p ON cr.post_id = p.post_id
+    JOIN
+    member m1 ON cr.seller_id = m1.member_id
+    JOIN
+    member m2 ON cr.buyer_id = m2.member_id
+    LEFT JOIN (
+    SELECT post_id, MIN(filepath) as filepath
+    FROM file
+    GROUP BY post_id
+    ) f ON cr.post_id = f.post_id
+    WHERE
+    cr.seller_id = #{memberId} OR cr.buyer_id = #{memberId}
+  </select>
+
+
+
+  <select id="checkChatRoomExists" resultType="String">
+    SELECT room_id FROM chat_room WHERE seller_id = #{sellerId} AND buyer_id = #{currentUserId} AND post_id = #{postId}
+  </select>
+
+  <insert id="createChatRoom">
+    INSERT INTO chat_room (room_id, post_id, seller_id, buyer_id)
+    VALUES (#{roomId}, #{postId}, #{sellerId}, #{currentUserId})
+  </insert>
+
+
+  <select id="getChatRoomByRoomId" resultMap="ChatRoomMap">
+    SELECT * FROM chat_room WHERE room_id = #{roomId}
+  </select>
+
+  <select id="getChatMessagesWithTranslation" resultMap="ChatMessageMap">
+    SELECT cm.*, tm.translated_content, tm.target_language
+    FROM chat_message cm
+    LEFT JOIN translated_message tm ON cm.message_id = tm.message_id
+    WHERE cm.room_id = #{roomId}
+    ORDER BY cm.sent_at ASC
+  </select>
+
+
+</mapper>

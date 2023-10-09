@@ -145,6 +145,11 @@
   </style>
 </head>
 <body>
+<!-- 로그인한 사용자의 ID를 저장하는 hidden input 태그 -->
+<input type="hidden" id="currentUserId" data-th-value="${session.loginUser.id}">
+<input type="hidden" id="postWriterId" data-th-value="${post.member.id}">
+
+
 <div data-th-replace="postlistheader :: postlistheader"></div>
 
 <!--본문 시작-->
@@ -178,45 +183,50 @@
           </button>
         </div>
       </div>
-      <td>
-        <input type='text' name='title' value="제목입니다." data-th-value="${post.title}">
-      </td>
-      <tr>
-        <div class="square-box" style="text-align: center;">
-          <div data-th-if="${post.attachedFiles != null && !post.attachedFiles.isEmpty()}">
-            <div th:each="file, fileIndex : ${post.attachedFiles}">
-              <img
-                  th:src="|https://kr.object.ncloudstorage.com/bitcamp-nc7-bucket-16/post/${file.filePath}|">
-            </div>
-
-          </div>
-      </tr>
-      <tr>
-      <tr>
-        <td><textarea name='content' style='height:50px; width:400px;'
-                      data-th-text="${post.content}"></textarea></td>
-      </tr>
-
       <tr>
         <td>
-          <button type="button" class="button likeButton" th:data-is-liked="${post.isLiked}"
-                  th:data-post-id="${post.id}">
-            <img class="likeImage"
-                 th:src="${post.isLiked} ? '/images/like_on.png' : '/images/like_off.png'"
-                 th:id="${'likeImage-' + post.id}">
-          </button>
-          <span class="likeCount" data-th-text="${post.likeCount}"
-                th:data-post-id="${post.id}">0</span>
-          <button type="button" class="button bookmarkButton"
-                  th:data-is-bookmarked="${post.isBookmarked}" th:data-post-id="${post.id}">
-            <img class="bookmarkImage"
-                 th:src="${post.isBookmarked} ? '/images/bookmark_on.png' : '/images/bookmark_off.png'"
-                 th:id="${'bookmarkImage-' + post.id}">
-          </button>
+          <input type='text' name='title' value="제목입니다." data-th-value="${post.title}">
         </td>
       </tr>
+      <div class="square-box" style="text-align: center;">
+        <div data-th-if="${post.attachedFiles != null && !post.attachedFiles.isEmpty()}">
+          <div th:each="file, fileIndex : ${post.attachedFiles}">
+            <img
+                th:src="|https://kr.object.ncloudstorage.com/bitcamp-nc7-bucket-16/post/${file.filePath}|">
+          </div>
+
+        </div>
+        </tr>
+        <tr>
+        <tr>
+          <td><textarea name='content' style='height:50px; width:400px;'
+                        data-th-text="${post.content}"></textarea></td>
+        </tr>
+
+        <tr>
+          <td>
+            <button type="button" class="button likeButton" th:data-is-liked="${post.isLiked}"
+                    th:data-post-id="${post.id}">
+              <img class="likeImage"
+                   th:src="${post.isLiked} ? '/images/like_on.png' : '/images/like_off.png'"
+                   th:id="${'likeImage-' + post.id}">
+            </button>
+            <span class="likeCount" data-th-text="${post.likeCount}"
+                  th:data-post-id="${post.id}">0</span>
+            <button type="button" class="button bookmarkButton"
+                    th:data-is-bookmarked="${post.isBookmarked}" th:data-post-id="${post.id}">
+              <img class="bookmarkImage"
+                   th:src="${post.isBookmarked} ? '/images/bookmark_on.png' : '/images/bookmark_off.png'"
+                   th:id="${'bookmarkImage-' + post.id}">
+            </button>
+          </td>
+        </tr>
     </table>
   </form>
+  <div class="seller-details">
+    <!-- ... other seller details ... -->
+    <button id="startChatButton" th:data-seller-id="${post.member.id}" th:data-post-id="${post.id}">1대1채팅</button>
+  </div>
 
   <div class="comment-section">
     <!-- 댓글 작성 창 -->
@@ -604,13 +614,52 @@
     loadComments(category, postId);
   });
 
-  function getPostIdFromUrl() {
-    const urlSegments = window.location.pathname.split('/');
-    const category = urlSegments[urlSegments.length - 2]; // URL에서 카테고리 추출
-    const postId = urlSegments[urlSegments.length - 1]; // URL에서 postId 추출
 
-    return {category, postId};
-  }
+
+
+
+
+
+
+  document.getElementById("startChatButton").addEventListener("click", function() {
+    const sellerId = this.getAttribute("data-seller-id");
+    const postId = this.getAttribute("data-post-id");
+    console.log("Seller ID:", sellerId);
+
+    if (!sellerId || isNaN(Number(sellerId))) {
+      console.error("잘못된 판매자 ID입니다.");
+      return;
+    }
+
+    const currentUserId = Number(document.getElementById("currentUserId").value);
+
+    if (!currentUserId) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    // AJAX 호출로 채팅방 생성 또는 가져오기
+    fetch(`/chatting/createOrGetChatRoom?sellerId=${sellerId}&currentUserId=${currentUserId}&postId=${postId}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if(data.success) {
+        window.location.href = `/chatting/room/${data.roomId}`;  // roomId로 리다이렉트
+      } else {
+        console.error("서버 응답 오류:", data.message);
+      }
+    })
+
+    .catch(err => {
+      console.error("채팅방 생성 또는 가져오기 중 오류 발생:", err);
+    });
+  });
+
+
 </script>
 <script th:src="@{/js/header.js}"></script>
 </body>

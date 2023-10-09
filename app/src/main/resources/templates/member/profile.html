@@ -136,6 +136,35 @@
     </div>
   </div>
 
+  <h3>채팅방 목록</h3>
+  <ul>
+    <li th:each="chatRoom : ${chatRooms}">
+      <a th:href="@{'/chatting/room/' + ${chatRoom.roomId}}">
+        <img th:if="${chatRoom.postAttachment}" th:src="${chatRoom.postAttachment}" alt="Post Image" style="width: 100px; height: auto;">
+        <span th:text="${chatRoom.lastMessage}"></span>
+        <!-- 아래 버튼을 클릭하면 해당 채팅방으로 이동합니다. -->
+        <button>채팅방 접속</button>
+      </a>
+<!--      <span th:text="${chatRoom.getBuyerId()}"></span>-->
+<!--      <span th:text="${chatRoom.getPostId()}"></span>-->
+      <span th:text="${chatRoom.getSellerNickname()}"></span>
+      <span th:text="${chatRoom.getBuyerNickname()}"></span>
+      <span th:text="${chatRoom.getPostTitle()}"></span>
+    </li>
+  </ul>
+
+
+ <!-- <h3>내게 온 채팅</h3>
+  <ul>
+    <li th:each="chatRoom : ${chatRooms}">
+      <a th:href="@{'/chatting/room/' + ${chatRoom.roomId}}">
+        게시글: <span th:text="${chatRoom.postId}"></span>,
+        마지막 메시지: <span th:text="${chatRoom.lastMessage}"></span>
+      </a>
+    </li>
+  </ul>-->
+
+
   <!-- 필요한 JavaScript 파일 -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
@@ -144,5 +173,4 @@
 
 </div>
 </body>
-`
 </html>
