@@ -3,7 +3,6 @@ package bitcamp.show_pet.chatting.controller;
 import bitcamp.show_pet.chatting.model.vo.ChatMessageVO;
 import bitcamp.show_pet.chatting.model.vo.ChatRoomVO;
 import bitcamp.show_pet.chatting.service.ChattingService;
-import bitcamp.show_pet.chatting.service.PapagoTranslationService;
 import bitcamp.show_pet.member.model.vo.Member;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -26,12 +29,9 @@ public class ChattingController {
   @Autowired
   private ChattingService chattingService;
 
-  @Autowired
-  private PapagoTranslationService papagoTranslationService;
-
   @RequestMapping("/room/{roomId}")
   public ModelAndView getChatRoom(@PathVariable("roomId") String roomId,
-      HttpServletRequest request) {
+                                  HttpServletRequest request) {
     if (roomId == null || roomId.trim().isEmpty() || !roomId.matches("^[a-fA-F0-9\\-]{36}$")) {
       throw new IllegalArgumentException("잘못된 채팅방 ID입니다.");
     }
@@ -50,6 +50,7 @@ public class ChattingController {
   @RequestMapping("/message/{roomId}")
   @ResponseBody
   public List<ChatMessageVO> getChatMessages(@PathVariable String roomId) {
+    System.out.println("메세지 룸아이디 실행됨!");
     return chattingService.getMessagesByRoomId(roomId);
   }
 
@@ -62,6 +63,7 @@ public class ChattingController {
 
     try {
       chattingService.saveMessage(message);
+      System.out.println("send 컨트롤러 실행됨!");
     } catch (IllegalArgumentException ex) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
@@ -80,7 +82,7 @@ public class ChattingController {
   @RequestMapping("/createOrGetChatRoom")
   @ResponseBody
   public ResponseEntity<Map<String, Object>> createOrGetChatRoom(@RequestParam int sellerId,
-      @RequestParam int currentUserId, @RequestParam int postId) {
+                                                                 @RequestParam int currentUserId, @RequestParam int postId) {
     System.out.println("채팅방 생성로직 호출!");
     Map<String, Object> result = new HashMap<>();
     String existingRoomId = chattingService.checkChatRoomExists(sellerId, currentUserId, postId);
@@ -125,31 +127,4 @@ public class ChattingController {
     mv.addObject("chatRooms", chatRooms);
     return mv;
   }
-
-//  @PostMapping("/detectLanguage")
-//  public ResponseEntity<ChatMessageVO> detectLanguage(@RequestBody ChatMessageVO message) {
-//    try {
-//      String content = message.getContent();
-//      String detectedLang = papagoTranslationService.detectLanguage(content);
-//      message.setDetectedLanguage(detectedLang);
-//
-//      return ResponseEntity.ok(message);
-//    } catch (Exception ex) {
-//      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-//    }
-//  }
-
-  @PostMapping("/translate")
-  public ResponseEntity<String> translateMessage(@RequestBody ChatMessageVO message) {
-    String content = message.getContent();
-    String targetLang = message.getTargetLang();
-
-    if (content == null || content.isEmpty() || targetLang == null || targetLang.isEmpty()) {
-      return ResponseEntity.badRequest().body("Content and targetLang are required.");
-    }
-
-    String translatedMessage = papagoTranslationService.detectAndTranslate(content, targetLang);
-    return ResponseEntity.ok(translatedMessage);
-  }
-
 }

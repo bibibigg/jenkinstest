@@ -15,6 +15,7 @@ public interface ChattingDAO {
   List<ChatMessageVO> getMessagesByRoomId(String roomId);
 
   void saveMessage(ChatMessageVO message);
+  void saveTranslatedMessage(ChatMessageVO message);
 
   List<ChatRoomVO> getChatRoomsForSeller(int sellerId);
 
@@ -28,7 +29,4 @@ public interface ChattingDAO {
 
   ChatRoomVO getChatRoomByRoomId(String roomId);
 
-  void saveTranslatedMessage(@Param("messageId") int messageId,
-                             @Param("translatedContent") String translatedContent,
-                             @Param("targetLanguage") String targetLanguage);
 }

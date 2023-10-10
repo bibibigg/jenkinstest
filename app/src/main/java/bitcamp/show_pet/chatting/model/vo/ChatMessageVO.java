@@ -9,7 +9,8 @@ public class ChatMessageVO implements Serializable {
   private String roomId;  // roomId의 타입을 String으로 변경
   private int senderId;
   private String content;
-  private String translatedContent;
+  private String translatedContent; // 번역된 메시지
+  private String targetLanguage;
   private LocalDateTime sentAt;
   private String detectedLanguage;
 
@@ -89,5 +90,13 @@ public class ChatMessageVO implements Serializable {
 
   public void setTranslatedContent(String translatedContent) {
     this.translatedContent = translatedContent;
+  }
+
+  public String getTargetLanguage() {
+    return targetLanguage;
+  }
+
+  public void setTargetLanguage(String targetLanguage) {
+    this.targetLanguage = targetLanguage;
   }
 }

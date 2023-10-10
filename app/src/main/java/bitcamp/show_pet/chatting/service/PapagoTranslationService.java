@@ -39,6 +39,12 @@ public class PapagoTranslationService {
                 return "언어 감지에 실패했습니다.";
             }
 
+            // 소스 언어와 타겟 언어가 동일한 경우 번역을 실행하지 않고 그대로 반환
+            if (detectedLang.equalsIgnoreCase(targetLang)) {
+                System.out.println("소스 언어와 타겟 언어가 동일합니다. 번역을 실행하지 않습니다.");
+                return inputText;
+            }
+
             // Step 2: 언어 감지 결과를 바탕으로 번역 수행
             String translatedText = translateText(inputText, detectedLang, targetLang);
 

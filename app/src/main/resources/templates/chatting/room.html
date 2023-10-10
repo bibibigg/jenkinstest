@@ -95,19 +95,13 @@
     const chatInput = document.querySelector("#chatInput");
     const sendButton = document.querySelector("#sendMessageButton");
 
-    function displayMessages(messages) {
-      // messages 배열을 순회하면서 메시지를 화면에 표시
-      messages.forEach(message => {
-        showMessage(message.senderId === sellerId ? "판매자" : "나", message.content);
-      });
-    }
-
-    function showMessage(senderId, messageContent) {
+    function showMessage(message) {
       var chatMessages = document.querySelector("#chatMessages");
       var messageElement = document.createElement("div");
-      messageElement.innerHTML = "<strong>" + senderId + ": </strong>" + messageContent;
+      var senderId = (message.senderId === sellerId) ? "판매자" : "나";
+      messageElement.innerHTML = "<strong>" + senderId + ": </strong>" + message.content;
 
-      if (senderId === "판매자") {
+      if (message.senderId === sellerId) {
         messageElement.className = "seller-message";
       } else {
         messageElement.className = "buyer-message";
@@ -122,7 +116,7 @@
               .then(response => response.json())
               .then(messages => {
                 messages.forEach(message => {
-                  showMessage(message.senderId === sellerId ? "판매자" : "나", message.content);
+                  showMessage(message);
                 });
               });
     }
@@ -135,8 +129,7 @@
                 console.log('Connected: ' + frame);
                 stompClient.subscribe('/topic/messages/' + roomId, function (message) {
                   console.log("Received real-time message:", message);
-                  const parsedMessage = JSON.parse(message.body);
-                  showMessage(parsedMessage.senderId === sellerId ? "판매자" : "나", parsedMessage.content);
+                  showMessage(JSON.parse(message.body));
                 });
               },
               function (error) {
@@ -163,36 +156,18 @@
 
     sendButton.addEventListener("click", function() {
       const content = chatInput.value;
-      const targetLang = "ko"; // 번역할 대상 언어 코드를 지정
 
       if (content && stompClient) {
-        translateAndShowMessage(content, targetLang);
+        const chatMessage = {
+          senderId: currentUserId,
+          content: content,
+          roomId: roomId
+        };
+        stompClient.send("/app/send", {}, JSON.stringify(chatMessage));
         chatInput.value = '';
       }
       console.log("Sending message to room:", roomId);
     });
-
-    // 메시지 보내기 버튼 클릭 시 번역 및 결과 표시
-    function translateAndShowMessage(content, targetLang) {
-      fetch("/chatting/translate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          content: content,
-          targetLang: targetLang
-        })
-      })
-              .then(response => response.text())
-              .then(translatedMessage => {
-                showMessage("나", content); // 원본 메시지 표시
-                showMessage("번역된 메시지", translatedMessage); // 번역된 메시지 표시
-              })
-              .catch(error => {
-                console.error("번역 오류:", error);
-              });
-    }
 
     fetchChatMessages();
     connect();
